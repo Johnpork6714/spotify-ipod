@@ -27,7 +27,7 @@ body { background-color: #2c3e50; display: flex; flex-direction: column; align-i
 .center-button { width: 80px; height: 80px; background: var(--button-bg); border-radius: 50%; border: 1px solid #ccc; box-shadow: 0 4px 8px rgba(0,0,0,0.1); cursor: pointer; z-index: 10; }
 .center-button:active { background: #e6e6e6; }
 .login-container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; }
-.login-btn { background-color: #1DB954; color: white; border: none; padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 12px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+.login-btn { background-color: #1DB954; color: white; border: none; padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 14px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 20; }
 .login-btn:hover { background-color: #1ed760; }
 </style>
 </head>
@@ -57,13 +57,20 @@ const REDIRECT_URI = window.location.origin + window.location.pathname;
 const SCOPES = ['user-modify-playback-state', 'user-read-playback-state'];
 let accessToken = null; let pollTimer = null;
 function checkAuth() {
-    const hash = window.location.hash.substring(1).split('&').reduce((initial, item) => { if (item) { let parts = item.split('='); initial[parts[0]] = decodeURIComponent(parts[1]); } return initial; }, {});
+    const hash = {};
+    if (window.location.hash) { window.location.hash.substring(1).split('&').forEach(item => { const parts = item.split('='); hash[parts[0]] = decodeURIComponent(parts[1] || ''); }); }
     if (hash.access_token) { accessToken = hash.access_token; localStorage.setItem('spotify_remote_token', accessToken); window.location.hash = ''; } else { accessToken = localStorage.getItem('spotify_remote_token'); }
     if (!accessToken) { setupLoginButton(); } else { initRemoteControl(); }
 }
 function setupLoginButton() {
     const loginBtn = document.getElementById('initial-login-btn');
-    if (loginBtn) { loginBtn.onclick = () => { const authUrl = `https://spotify.com{CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=${encodeURIComponent(SCOPES.join(' '))}&response_type=token&show_dialog=true`; window.location.href = authUrl; }; }
+    if (loginBtn) {
+        loginBtn.onclick = () => {
+            if (CLIENT_ID === 'DITT_SPOTIFY_CLIENT_ID' || CLIENT_ID.trim() === '') { alert('Fel: Du måste ersätta DITT_SPOTIFY_CLIENT_ID i koden med din kod från Spotify Dashboard!'); return; }
+            const authUrl = `https://spotify.com{CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=${encodeURIComponent(SCOPES.join(' '))}&response_type=token&show_dialog=true`;
+            window.location.href = authUrl;
+        };
+    }
 }
 function initRemoteControl() {
     document.getElementById('screen-body').innerHTML = `<p style="font-size:12px; color:#555; margin:0 0 5px 0;">Nu spelas</p><h3 id="track-title">Laddar...</h3><p id="track-artist"></p>`;
@@ -94,7 +101,7 @@ function updateIpodScreen(track, artist, isPaused, currentPos, duration) {
     document.getElementById('time-current').textContent = formatTime(currentPos); document.getElementById('time-total').textContent = formatTime(duration);
     if (duration > 0) { const percentage = (currentPos / duration) * 100; document.getElementById('progress-fill').style.width = `${percentage}%`; } else { document.getElementById('progress-fill').style.width = '0%'; }
 }
-window.addEventListener('DOMContentLoaded', checkAuth);
+checkAuth();
 </script>
 </body>
 </html>
